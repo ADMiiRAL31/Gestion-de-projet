@@ -1,0 +1,170 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  firstName    String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  incomes               Income[]
+  recurringExpenses     RecurringExpense[]
+  loans                 Loan[]
+  projectContributions  ProjectContribution[]
+
+  @@map("users")
+}
+
+enum IncomeType {
+  SALARY
+  FREELANCE
+  BONUS
+  INVESTMENT
+  OTHER
+}
+
+model Income {
+  id          String     @id @default(uuid())
+  userId      String
+  type        IncomeType
+  label       String
+  amount      Float
+  currency    String     @default("MAD")
+  startDate   DateTime
+  endDate     DateTime?
+  isRecurring Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("incomes")
+  @@index([userId])
+}
+
+enum BillingPeriod {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum ExpenseCategory {
+  HOUSING
+  UTILITIES
+  INSURANCE
+  SUBSCRIPTION
+  TRANSPORT
+  FOOD
+  HEALTH
+  EDUCATION
+  OTHER
+}
+
+model RecurringExpense {
+  id            String          @id @default(uuid())
+  userId        String?
+  isShared      Boolean         @default(false)
+  category      ExpenseCategory
+  label         String
+  amount        Float
+  currency      String          @default("MAD")
+  billingPeriod BillingPeriod   @default(MONTHLY)
+  startDate     DateTime
+  endDate       DateTime?
+  provider      String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("recurring_expenses")
+  @@index([userId])
+}
+
+model Loan {
+  id              String    @id @default(uuid())
+  userId          String?
+  isShared        Boolean   @default(false)
+  label           String
+  totalAmount     Float
+  remainingAmount Float
+  monthlyPayment  Float
+  interestRate    Float
+  startDate       DateTime
+  endDate         DateTime
+  lender          String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("loans")
+  @@index([userId])
+}
+
+enum ProjectStatus {
+  IDEA
+  PLANNING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model CoupleProject {
+  id           String          @id @default(uuid())
+  title        String
+  description  String?
+  targetAmount Float
+  currency     String          @default("MAD")
+  targetDate   DateTime
+  status       ProjectStatus   @default(IDEA)
+  priority     ProjectPriority @default(MEDIUM)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relations
+  contributions ProjectContribution[]
+
+  @@map("couple_projects")
+}
+
+model ProjectContribution {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  amount    Float
+  date      DateTime @default(now())
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project CoupleProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("project_contributions")
+  @@index([projectId])
+  @@index([userId])
+}

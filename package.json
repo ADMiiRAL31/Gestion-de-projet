@@ -1,0 +1,26 @@
+{
+  "name": "couple-life-admin",
+  "version": "1.0.0",
+  "description": "Couple Life Project Management System - Admin Dashboard",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "backend": "cd backend && npm run start:dev",
+    "frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend"
+  },
+  "keywords": [
+    "couple",
+    "finance",
+    "project-management",
+    "admin-dashboard"
+  ],
+  "author": "Younes & Asmae",
+  "license": "PRIVATE"
+}
