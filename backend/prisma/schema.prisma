@@ -1,0 +1,145 @@
+// Prisma Schema for Couple Life Project Management System
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - Younes & Asmae
+model User {
+  id        String   @id @default(uuid())
+  firstName String
+  email     String   @unique
+  passwordHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  incomes              Income[]
+  recurringExpenses    RecurringExpense[]
+  loans                Loan[]
+  projectContributions ProjectContribution[]
+
+  @@map("users")
+}
+
+// Income model - Track all income sources
+model Income {
+  id          String    @id @default(uuid())
+  userId      String
+  type        String    // salary, bonus, freelance, investment, other
+  label       String
+  amount      Float
+  currency    String    @default("EUR")
+  startDate   DateTime
+  endDate     DateTime?
+  isRecurring Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("incomes")
+}
+
+// RecurringExpense model - Track all recurring expenses
+model RecurringExpense {
+  id            String    @id @default(uuid())
+  userId        String?   // Nullable for shared expenses
+  isShared      Boolean   @default(false)
+  category      String    // rent, insurance, phone, subscription, loan_payment, utilities, transport, other
+  label         String
+  amount        Float
+  currency      String    @default("EUR")
+  billingPeriod String    // monthly, yearly, quarterly, weekly
+  startDate     DateTime
+  endDate       DateTime?
+  provider      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("recurring_expenses")
+}
+
+// Loan model - Track all loans
+model Loan {
+  id              String    @id @default(uuid())
+  userId          String?   // Nullable for shared loans
+  isShared        Boolean   @default(false)
+  label           String
+  totalAmount     Float
+  remainingAmount Float
+  monthlyPayment  Float
+  interestRate    Float     // Annual interest rate in percentage
+  startDate       DateTime
+  endDate         DateTime
+  lender          String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("loans")
+}
+
+// CoupleProject model - Life projects for the couple
+model CoupleProject {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  targetAmount Float
+  currency     String   @default("EUR")
+  targetDate   DateTime
+  status       ProjectStatus @default(IDEA)
+  priority     ProjectPriority @default(MEDIUM)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  contributions ProjectContribution[]
+
+  @@map("couple_projects")
+}
+
+// ProjectContribution model - Track contributions to projects
+model ProjectContribution {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String
+  amount    Float
+  date      DateTime @default(now())
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  project CoupleProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("project_contributions")
+}
+
+// Enums
+enum ProjectStatus {
+  IDEA
+  PLANNING
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
