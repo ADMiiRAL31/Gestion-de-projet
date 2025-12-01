@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
 import {
   CalendarIcon,
@@ -21,21 +21,98 @@ interface CalendarEvent {
 }
 
 export default function CalendarPage() {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 1)); // Décembre 2025
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Événements du calendrier (à remplacer par de vraies données)
-  const events: CalendarEvent[] = [
-    { id: '1', title: 'Salaire Younes', amount: 4500, type: 'income', date: new Date(2025, 11, 1), recurring: true },
-    { id: '2', title: 'Salaire Asmae', amount: 3800, type: 'income', date: new Date(2025, 11, 1), recurring: true },
-    { id: '3', title: 'Loyer', amount: 1200, type: 'expense', date: new Date(2025, 11, 1), recurring: true },
-    { id: '4', title: 'Mensualité Crédit Voiture', amount: 450, type: 'loan', date: new Date(2025, 11, 5), recurring: true },
-    { id: '5', title: 'Assurance Voiture', amount: 50, type: 'expense', date: new Date(2025, 11, 10), recurring: true },
-    { id: '6', title: 'Abonnement Netflix', amount: 15.99, type: 'expense', date: new Date(2025, 11, 12), recurring: true },
-    { id: '7', title: 'Électricité & Eau', amount: 150, type: 'expense', date: new Date(2025, 11, 15), recurring: true },
-    { id: '8', title: 'Internet & Téléphone', amount: 60, type: 'expense', date: new Date(2025, 11, 20), recurring: true },
-    { id: '9', title: 'Abonnement Gym (Asmae)', amount: 45, type: 'expense', date: new Date(2025, 11, 25), recurring: true },
-    { id: '10', title: 'Contribution Projet Japon', amount: 800, type: 'expense', date: new Date(2025, 11, 28), recurring: false },
-  ];
+  useEffect(() => {
+    loadCalendarData();
+  }, [currentDate]);
+
+  const loadCalendarData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+      // Charger les revenus
+      const incomesResponse = await fetch(`${API_URL}/incomes`, { headers });
+      const incomes = incomesResponse.ok ? await incomesResponse.json() : [];
+
+      // Charger les dépenses récurrentes
+      const expensesResponse = await fetch(`${API_URL}/recurring-expenses`, { headers });
+      const expenses = expensesResponse.ok ? await expensesResponse.json() : [];
+
+      // Charger les crédits
+      const loansResponse = await fetch(`${API_URL}/loans`, { headers });
+      const loans = loansResponse.ok ? await loansResponse.json() : [];
+
+      // Convertir en événements calendrier
+      const calendarEvents: CalendarEvent[] = [];
+
+      // Ajouter les revenus (généralement mensuels le 1er du mois)
+      incomes.forEach((income: any) => {
+        const eventDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        calendarEvents.push({
+          id: `income-${income.id}`,
+          title: `${income.source} (${income.user?.firstName || 'Revenu'})`,
+          amount: income.amount,
+          type: 'income',
+          date: eventDate,
+          recurring: true,
+        });
+      });
+
+      // Ajouter les dépenses récurrentes
+      expenses.forEach((expense: any) => {
+        // Utiliser la date de début pour déterminer le jour du mois
+        const startDate = new Date(expense.startDate);
+        const dayOfMonth = startDate.getDate();
+        const eventDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayOfMonth);
+
+        calendarEvents.push({
+          id: `expense-${expense.id}`,
+          title: expense.description,
+          amount: expense.amount,
+          type: 'expense',
+          date: eventDate,
+          recurring: true,
+        });
+      });
+
+      // Ajouter les mensualités de crédit
+      loans.forEach((loan: any) => {
+        // Utiliser la date de début pour déterminer le jour du mois
+        const startDate = new Date(loan.startDate);
+        const dayOfMonth = startDate.getDate();
+        const eventDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), dayOfMonth);
+
+        calendarEvents.push({
+          id: `loan-${loan.id}`,
+          title: `Mensualité ${loan.loanName}`,
+          amount: loan.monthlyPayment,
+          type: 'loan',
+          date: eventDate,
+          recurring: true,
+        });
+      });
+
+      setEvents(calendarEvents);
+    } catch (err: any) {
+      console.error('Erreur de chargement:', err);
+      setError(err.message || 'Erreur lors du chargement des données');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -110,6 +187,16 @@ export default function CalendarPage() {
     .filter((e) => e.type === 'expense' || e.type === 'loan')
     .reduce((sum, e) => sum + e.amount, 0);
 
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Chargement du calendrier...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -123,6 +210,23 @@ export default function CalendarPage() {
             <p className="text-gray-600 mt-1">Visualisez toutes vos échéances financières</p>
           </div>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+
+        {events.length === 0 && !loading && (
+          <div className="card bg-blue-50 border-l-4 border-blue-500">
+            <p className="text-blue-800">
+              <strong>Aucune donnée financière trouvée.</strong> Ajoutez vos revenus et dépenses pour voir votre calendrier financier !
+            </p>
+            <p className="text-blue-700 text-sm mt-2">
+              Allez dans les sections Revenus, Dépenses ou Crédits pour commencer.
+            </p>
+          </div>
+        )}
 
         {/* Résumé Mensuel */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -230,6 +334,18 @@ export default function CalendarPage() {
               <span className="text-sm text-gray-700">Mensualités crédit</span>
             </div>
           </div>
+        </div>
+
+        {/* Note d'information */}
+        <div className="card bg-blue-50 border-l-4 border-blue-500">
+          <p className="text-blue-900 font-medium mb-2">Comment personnaliser votre calendrier</p>
+          <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+            <li>Ajoutez vos revenus dans la section <strong>Revenus</strong></li>
+            <li>Créez vos dépenses récurrentes dans la section <strong>Dépenses</strong></li>
+            <li>Enregistrez vos crédits dans la section <strong>Crédits</strong></li>
+            <li>Le calendrier se met à jour automatiquement avec vos données</li>
+            <li>Vous et Asmae pouvez chacun ajouter vos propres revenus et dépenses</li>
+          </ul>
         </div>
       </div>
     </DashboardLayout>

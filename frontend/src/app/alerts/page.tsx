@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/Layout/DashboardLayout';
 import {
   BellAlertIcon,
@@ -8,100 +8,67 @@ import {
   ExclamationTriangleIcon,
   InformationCircleIcon,
   XMarkIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
+import { alertsService, Alert, AlertType, CreateAlertDto } from '@/services/alerts.service';
 
-type AlertType = 'urgent' | 'warning' | 'info' | 'success';
-
-interface Alert {
-  id: string;
-  type: AlertType;
-  title: string;
-  description: string;
-  date: Date;
-  isRead: boolean;
-  actionUrl?: string;
-}
+type AlertFilter = 'all' | 'unread' | 'urgent';
 
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState<Alert[]>([
-    {
-      id: '1',
-      type: 'urgent',
-      title: 'Loyer à payer dans 3 jours',
-      description: 'Le loyer de 1200€ doit être payé le 1er du mois',
-      date: new Date(2025, 11, 28),
-      isRead: false,
-      actionUrl: '/expenses',
-    },
-    {
-      id: '2',
-      type: 'warning',
-      title: 'Budget Loisirs dépassé',
-      description: 'Vous avez dépassé votre budget loisirs de 50€ ce mois-ci',
-      date: new Date(2025, 11, 27),
-      isRead: false,
-      actionUrl: '/budget',
-    },
-    {
-      id: '3',
-      type: 'info',
-      title: 'Nouvelle contribution au projet Japon',
-      description: 'Asmae a ajouté une contribution de 800€',
-      date: new Date(2025, 11, 26),
-      isRead: true,
-      actionUrl: '/projects',
-    },
-    {
-      id: '4',
-      type: 'urgent',
-      title: 'Assurance voiture à renouveler',
-      description: 'L\'assurance arrive à échéance dans 15 jours',
-      date: new Date(2025, 11, 25),
-      isRead: false,
-    },
-    {
-      id: '5',
-      type: 'success',
-      title: 'Objectif épargne atteint !',
-      description: 'Vous avez atteint votre objectif d\'épargne mensuel de 1500€',
-      date: new Date(2025, 11, 24),
-      isRead: true,
-    },
-    {
-      id: '6',
-      type: 'warning',
-      title: 'Crédit voiture - Mensualité bientôt prélevée',
-      description: 'Le prélèvement de 450€ aura lieu dans 5 jours',
-      date: new Date(2025, 11, 23),
-      isRead: true,
-      actionUrl: '/loans',
-    },
-  ]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<AlertFilter>('all');
+  const [isCreating, setIsCreating] = useState(false);
+  const [newAlert, setNewAlert] = useState({
+    title: '',
+    description: '',
+    type: AlertType.INFO,
+    actionUrl: '',
+  });
+
+  useEffect(() => {
+    loadAlerts();
+  }, []);
+
+  const loadAlerts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await alertsService.getAllAlerts();
+      setAlerts(data);
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors du chargement des alertes');
+      console.error('Erreur de chargement:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getAlertConfig = (type: AlertType) => {
     const configs = {
-      urgent: {
+      [AlertType.URGENT]: {
         icon: ExclamationTriangleIcon,
         bgColor: 'bg-red-50',
         borderColor: 'border-red-300',
         iconColor: 'text-red-600',
         textColor: 'text-red-900',
       },
-      warning: {
+      [AlertType.WARNING]: {
         icon: ExclamationTriangleIcon,
         bgColor: 'bg-orange-50',
         borderColor: 'border-orange-300',
         iconColor: 'text-orange-600',
         textColor: 'text-orange-900',
       },
-      info: {
+      [AlertType.INFO]: {
         icon: InformationCircleIcon,
         bgColor: 'bg-blue-50',
         borderColor: 'border-blue-300',
         iconColor: 'text-blue-600',
         textColor: 'text-blue-900',
       },
-      success: {
+      [AlertType.SUCCESS]: {
         icon: CheckCircleIcon,
         bgColor: 'bg-green-50',
         borderColor: 'border-green-300',
@@ -112,17 +79,78 @@ export default function AlertsPage() {
     return configs[type];
   };
 
-  const markAsRead = (id: string) => {
-    setAlerts(alerts.map(alert =>
-      alert.id === id ? { ...alert, isRead: true } : alert
-    ));
+  const markAsRead = async (id: string) => {
+    try {
+      await alertsService.markAsRead(id);
+      await loadAlerts();
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors de la modification du statut');
+    }
   };
 
-  const deleteAlert = (id: string) => {
-    setAlerts(alerts.filter(alert => alert.id !== id));
+  const deleteAlert = async (id: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette alerte ?')) {
+      try {
+        await alertsService.deleteAlert(id);
+        await loadAlerts();
+      } catch (err: any) {
+        alert(err.message || 'Erreur lors de la suppression');
+      }
+    }
   };
 
-  const unreadCount = alerts.filter(a => !a.isRead).length;
+  const handleCreateAlert = async () => {
+    if (!newAlert.title.trim() || !newAlert.description.trim()) {
+      alert('Veuillez remplir au moins le titre et la description');
+      return;
+    }
+
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+
+      const createData: CreateAlertDto = {
+        userId: user?.id,
+        type: newAlert.type,
+        title: newAlert.title,
+        description: newAlert.description,
+        actionUrl: newAlert.actionUrl || undefined,
+      };
+
+      await alertsService.createAlert(createData);
+
+      setNewAlert({
+        title: '',
+        description: '',
+        type: AlertType.INFO,
+        actionUrl: '',
+      });
+      setIsCreating(false);
+
+      await loadAlerts();
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors de la création de l\'alerte');
+    }
+  };
+
+  const filteredAlerts = alerts.filter((alert) => {
+    if (filter === 'unread') return !alert.isRead;
+    if (filter === 'urgent') return alert.type === AlertType.URGENT;
+    return true;
+  });
+
+  const unreadCount = alerts.filter((a) => !a.isRead).length;
+  const urgentCount = alerts.filter((a) => a.type === AlertType.URGENT).length;
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Chargement des alertes...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -138,30 +166,64 @@ export default function AlertsPage() {
               Vous avez {unreadCount} alerte(s) non lue(s)
             </p>
           </div>
+          <button
+            onClick={() => setIsCreating(true)}
+            className="btn-primary flex items-center"
+          >
+            <PlusIcon className="w-5 h-5 mr-2" />
+            Nouvelle Alerte
+          </button>
         </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
 
         {/* Filtres */}
         <div className="flex gap-3">
-          <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg ${
+              filter === 'all'
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
             Toutes ({alerts.length})
           </button>
-          <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+          <button
+            onClick={() => setFilter('unread')}
+            className={`px-4 py-2 rounded-lg ${
+              filter === 'unread'
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
             Non lues ({unreadCount})
           </button>
-          <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-            Urgentes ({alerts.filter(a => a.type === 'urgent').length})
+          <button
+            onClick={() => setFilter('urgent')}
+            className={`px-4 py-2 rounded-lg ${
+              filter === 'urgent'
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Urgentes ({urgentCount})
           </button>
         </div>
 
         {/* Liste des alertes */}
         <div className="space-y-3">
-          {alerts.length === 0 ? (
+          {filteredAlerts.length === 0 ? (
             <div className="card text-center py-12">
               <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <p className="text-gray-500">Aucune alerte pour le moment</p>
             </div>
           ) : (
-            alerts.map((alert) => {
+            filteredAlerts.map((alert) => {
               const config = getAlertConfig(alert.type);
               const Icon = config.icon;
 
@@ -186,7 +248,7 @@ export default function AlertsPage() {
                           </h3>
                           <p className="text-gray-700 text-sm mt-1">{alert.description}</p>
                           <p className="text-xs text-gray-500 mt-2">
-                            {alert.date.toLocaleDateString('fr-FR', {
+                            {new Date(alert.date).toLocaleDateString('fr-FR', {
                               weekday: 'long',
                               year: 'numeric',
                               month: 'long',
@@ -228,6 +290,83 @@ export default function AlertsPage() {
             })
           )}
         </div>
+
+        {/* Formulaire de création (modal) */}
+        {isCreating && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-xl font-bold mb-4">Nouvelle Alerte</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Type</label>
+                  <select
+                    className="input-field"
+                    value={newAlert.type}
+                    onChange={(e) =>
+                      setNewAlert({ ...newAlert, type: e.target.value as AlertType })
+                    }
+                  >
+                    <option value={AlertType.INFO}>Information</option>
+                    <option value={AlertType.SUCCESS}>Succès</option>
+                    <option value={AlertType.WARNING}>Avertissement</option>
+                    <option value={AlertType.URGENT}>Urgent</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Titre</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="Titre de l'alerte"
+                    value={newAlert.title}
+                    onChange={(e) => setNewAlert({ ...newAlert, title: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Description</label>
+                  <textarea
+                    className="input-field"
+                    rows={3}
+                    placeholder="Description..."
+                    value={newAlert.description}
+                    onChange={(e) => setNewAlert({ ...newAlert, description: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Lien d'action (optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="/expenses, /projects, etc."
+                    value={newAlert.actionUrl}
+                    onChange={(e) => setNewAlert({ ...newAlert, actionUrl: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setIsCreating(false);
+                      setNewAlert({
+                        title: '',
+                        description: '',
+                        type: AlertType.INFO,
+                        actionUrl: '',
+                      });
+                    }}
+                    className="btn-secondary flex-1"
+                  >
+                    Annuler
+                  </button>
+                  <button onClick={handleCreateAlert} className="btn-primary flex-1">
+                    Créer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Paramètres des notifications */}
         <div className="card bg-gray-50">
