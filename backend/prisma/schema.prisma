@@ -24,6 +24,9 @@ model User {
   recurringExpenses    RecurringExpense[]
   loans                Loan[]
   projectContributions ProjectContribution[]
+  notes                Note[]
+  alerts               Alert[]
+  budgets              Budget[]
 
   @@map("users")
 }
@@ -129,6 +132,61 @@ model ProjectContribution {
   @@map("project_contributions")
 }
 
+// Note model - Notes et rappels de couple
+model Note {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String
+  category  NoteCategory
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+// Alert model - Alertes et notifications
+model Alert {
+  id          String    @id @default(uuid())
+  userId      String?   // Null = alerte pour tous
+  type        AlertType
+  title       String
+  description String
+  date        DateTime  @default(now())
+  isRead      Boolean   @default(false)
+  actionUrl   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alerts")
+}
+
+// Budget model - Budget limits per category
+model Budget {
+  id        String   @id @default(uuid())
+  userId    String
+  category  String   // Alimentation, Transport, Loisirs, etc.
+  budgetAmount Float
+  spent     Float    @default(0)
+  month     Int      // 1-12
+  year      Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category, month, year])
+  @@map("budgets")
+}
+
 // Enums
 enum ProjectStatus {
   IDEA
@@ -142,4 +200,18 @@ enum ProjectPriority {
   LOW
   MEDIUM
   HIGH
+}
+
+enum NoteCategory {
+  TACHE
+  IDEE
+  RAPPEL
+  IMPORTANT
+}
+
+enum AlertType {
+  URGENT
+  WARNING
+  INFO
+  SUCCESS
 }
