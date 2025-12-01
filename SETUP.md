@@ -73,7 +73,7 @@ JWT_SECRET="couple-life-secret-key-2024-younes-asmae"
 JWT_EXPIRES_IN="7d"
 
 # Application
-PORT=3001
+PORT=3000
 NODE_ENV=development
 ```
 
@@ -117,7 +117,7 @@ npm run build
 npm run start:prod
 ```
 
-Le backend sera accessible sur : **http://localhost:3001**
+Le backend sera accessible sur : **http://localhost:3000**
 
 ## 🎨 Installation du Frontend
 
@@ -138,7 +138,7 @@ npm install
 Créez un fichier `.env.local` à la racine du dossier `frontend` :
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
 ### 4. Démarrer le Serveur Frontend
@@ -152,11 +152,11 @@ npm run build
 npm start
 ```
 
-Le frontend sera accessible sur : **http://localhost:3000**
+Le frontend sera accessible sur : **http://localhost:3001**
 
 ## 🎯 Connexion à l'Application
 
-1. Ouvrez votre navigateur à l'adresse **http://localhost:3000**
+1. Ouvrez votre navigateur à l'adresse **http://localhost:3001**
 2. Vous serez redirigé vers la page de connexion
 3. Utilisez les identifiants :
    - **Younes** : `younes@couple.com` / `password123`
@@ -244,7 +244,7 @@ npm run build
 ### Problème : "Échec de connexion. Vérifiez vos identifiants."
 
 **Solution :**
-1. Vérifiez que le backend est bien démarré sur le port 3001
+1. Vérifiez que le backend est bien démarré sur le port 3000
 2. Vérifiez que la base de données PostgreSQL est en cours d'exécution
 3. Assurez-vous que les données de seed ont été chargées (`npm run prisma:seed`)
 
@@ -258,16 +258,16 @@ npx prisma migrate reset
 npm run prisma:seed
 ```
 
-### Problème : "Port 3001 already in use"
+### Problème : "Port 3000 already in use" (Backend)
 
 **Solution :**
 ```bash
 # Trouver le processus utilisant le port
 # Sur Windows
-netstat -ano | findstr :3001
+netstat -ano | findstr :3000
 
 # Sur macOS/Linux
-lsof -ti:3001
+lsof -ti:3000
 
 # Tuer le processus
 # Sur Windows (remplacez PID par le numéro du processus)
@@ -290,7 +290,7 @@ npm run prisma:generate
 **Vérifications :**
 1. Le backend est bien démarré
 2. Les migrations ont été exécutées
-3. Le fichier `.env.local` du frontend contient `NEXT_PUBLIC_API_URL=http://localhost:3001`
+3. Le fichier `.env.local` du frontend contient `NEXT_PUBLIC_API_URL=http://localhost:3000`
 4. Vérifiez la console du navigateur (F12) pour voir les erreurs
 
 ## 📚 Structure du Projet

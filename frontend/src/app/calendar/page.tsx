@@ -41,7 +41,7 @@ export default function CalendarPage() {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
       // Charger les revenus
       const incomesResponse = await fetch(`${API_URL}/incomes`, { headers });
