@@ -8,10 +8,6 @@ import { RecurringExpensesModule } from './recurring-expenses/recurring-expenses
 import { LoansModule } from './loans/loans.module';
 import { CoupleProjectsModule } from './couple-projects/couple-projects.module';
 import { DashboardModule } from './dashboard/dashboard.module';
-// Modules désactivés temporairement (nécessitent @nestjs/mapped-types et prisma generate)
-// import { NotesModule } from './notes/notes.module';
-// import { AlertsModule } from './alerts/alerts.module';
-// import { BudgetsModule } from './budgets/budgets.module';
 
 @Module({
   imports: [
@@ -26,10 +22,6 @@ import { DashboardModule } from './dashboard/dashboard.module';
     LoansModule,
     CoupleProjectsModule,
     DashboardModule,
-    // Modules désactivés temporairement
-    // NotesModule,
-    // AlertsModule,
-    // BudgetsModule,
   ],
 })
 export class AppModule {}

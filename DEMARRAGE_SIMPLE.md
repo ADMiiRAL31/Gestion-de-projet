@@ -2,10 +2,10 @@
 
 ## ✅ Modifications Effectuées
 
-J'ai **désactivé temporairement** les modules qui causaient des erreurs TypeScript :
-- ❌ Notes & Rappels (désactivé)
-- ❌ Alertes & Notifications (désactivé)
-- ❌ Budgets par Catégorie (désactivé)
+J'ai **supprimé** les modules qui causaient des erreurs TypeScript :
+- ❌ Notes & Rappels (supprimé)
+- ❌ Alertes & Notifications (supprimé)
+- ❌ Budgets par Catégorie (supprimé)
 
 Les modules **fonctionnels** restent actifs :
 - ✅ Authentification (Login/Register)
@@ -173,41 +173,43 @@ Tables actuellement utilisées :
 
 ---
 
-## 🔄 RÉACTIVER LES MODULES DÉSACTIVÉS (Plus tard)
+## 🔄 RESTAURER LES MODULES SUPPRIMÉS (Plus tard)
 
-Si vous souhaitez réactiver Notes/Alerts/Budgets :
+Si vous souhaitez restaurer Notes/Alerts/Budgets, vous devrez les récupérer depuis l'historique Git et corriger les erreurs TypeScript :
 
-### 1. Installer la dépendance manquante
+### 1. Récupérer les modules depuis Git
+```bash
+git checkout HEAD~1 -- backend/src/notes
+git checkout HEAD~1 -- backend/src/alerts
+git checkout HEAD~1 -- backend/src/budgets
+```
+
+### 2. Installer les dépendances manquantes
 ```bash
 cd backend
 npm install @nestjs/mapped-types
 ```
 
-### 2. Régénérer Prisma
-```bash
-npx prisma generate
-```
+### 3. Corriger les erreurs TypeScript
+- Vérifier que tous les champs existent dans le schéma Prisma
+- Corriger les chemins d'imports (ex: jwt-auth.guard)
+- Aligner les enums entre DTOs et Prisma
 
-### 3. Créer les migrations
-```bash
-npx prisma migrate dev --name add_notes_alerts_budgets
-```
-
-### 4. Décommenter dans `app.module.ts`
+### 4. Ajouter dans `app.module.ts`
 ```typescript
-// Ligne 12-14 : Décommenter
 import { NotesModule } from './notes/notes.module';
 import { AlertsModule } from './alerts/alerts.module';
 import { BudgetsModule } from './budgets/budgets.module';
 
-// Ligne 30-32 : Décommenter
+// Dans imports:
 NotesModule,
 AlertsModule,
 BudgetsModule,
 ```
 
-### 5. Redémarrer le backend
+### 5. Régénérer Prisma et redémarrer
 ```bash
+npx prisma generate
 npm run start:dev
 ```
 
