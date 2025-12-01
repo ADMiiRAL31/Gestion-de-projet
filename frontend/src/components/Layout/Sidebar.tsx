@@ -10,14 +10,22 @@ import {
   BuildingLibraryIcon,
   HeartIcon,
   ArrowRightOnRectangleIcon,
+  ChartBarIcon,
+  CalendarIcon,
+  BellAlertIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Incomes', href: '/incomes', icon: BanknotesIcon },
-  { name: 'Expenses', href: '/expenses', icon: CreditCardIcon },
-  { name: 'Loans', href: '/loans', icon: BuildingLibraryIcon },
-  { name: 'Couple Projects', href: '/projects', icon: HeartIcon },
+  { name: 'Tableau de bord', href: '/dashboard', icon: HomeIcon },
+  { name: 'Revenus', href: '/incomes', icon: BanknotesIcon },
+  { name: 'Dépenses', href: '/expenses', icon: CreditCardIcon },
+  { name: 'Crédits', href: '/loans', icon: BuildingLibraryIcon },
+  { name: 'Projets de Couple', href: '/projects', icon: HeartIcon },
+  { name: 'Budget & Statistiques', href: '/budget', icon: ChartBarIcon },
+  { name: 'Calendrier', href: '/calendar', icon: CalendarIcon },
+  { name: 'Alertes', href: '/alerts', icon: BellAlertIcon },
+  { name: 'Notes & Rappels', href: '/notes', icon: DocumentTextIcon },
 ];
 
 export default function Sidebar() {
@@ -28,7 +36,7 @@ export default function Sidebar() {
     <div className="flex flex-col h-screen w-64 bg-white border-r border-gray-200">
       {/* Logo */}
       <div className="flex items-center justify-center h-16 border-b border-gray-200 bg-primary-600">
-        <h1 className="text-2xl font-bold text-white">💑 Couple Life</h1>
+        <h1 className="text-2xl font-bold text-white">💑 Vie de Couple</h1>
       </div>
 
       {/* User Info */}
@@ -74,7 +82,7 @@ export default function Sidebar() {
           className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
         >
           <ArrowRightOnRectangleIcon className="w-5 h-5 mr-3" />
-          Logout
+          Déconnexion
         </button>
       </div>
     </div>

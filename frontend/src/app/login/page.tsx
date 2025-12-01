@@ -30,14 +30,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary-600 mb-2">💑 Couple Life</h1>
-          <p className="text-gray-600">Project Management for Younes & Asmae</p>
+          <h1 className="text-4xl font-bold text-primary-600 mb-2">💑 Vie de Couple</h1>
+          <p className="text-gray-600">Gestion de Projets pour Younes & Asmae</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+              Échec de connexion. Vérifiez vos identifiants.
             </div>
           )}
 
@@ -58,7 +58,7 @@ export default function LoginPage() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
+              Mot de passe
             </label>
             <input
               id="password"
@@ -76,12 +76,12 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
 
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600 font-semibold mb-2">Demo Credentials:</p>
+          <p className="text-sm text-gray-600 font-semibold mb-2">Identifiants de test :</p>
           <div className="space-y-1 text-xs text-gray-500">
             <p>
               <strong>Younes:</strong> younes@example.com / younes123
